@@ -1,23 +1,46 @@
 // create web server
+// create a new instance of express
 const express = require('express');
 const app = express();
+// create a new instance of http
+const http = require('http');
+// create a new instance of socket.io
+const socketIo = require('socket.io');
+
+// create a new http server
+const server = http.createServer(app);
+// create a new socket.io server
+const io = socketIo(server);
+
+// the port we are listening to
 const port = 3000;
-const path = require('path');
 
-// create a static web server
-app.use(express.static('public'));
+// middleware
+app.use(express.static(__dirname + '/public'));
 
-// create a route
+// the route for the server
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname + '/index.html'));
+    res.sendFile(__dirname + '/index.html');
 });
 
-// create a route
-app.get('/comments', (req, res) => {
-  res.sendFile(path.join(__dirname + '/comments.html'));
+// the server listens for a connection
+io.on('connection', (socket) => {
+    console.log('a user connected');
+
+    // the server listens for a message
+    socket.on('message', (msg) => {
+        console.log('message: ' + msg);
+        // the server sends the message to all connected clients
+        io.emit('message', msg);
+    });
+
+    // the server listens for a disconnection
+    socket.on('disconnect', () => {
+        console.log('user disconnected');
+    });
 });
 
-// start server
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+// the server listens for connections on the port
+server.listen(port, () => {
+    console.log('listening on *:' + port);
 });
